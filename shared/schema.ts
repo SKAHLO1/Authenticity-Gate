@@ -1,18 +1,31 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+export const verifications = pgTable("verifications", {
+  id: serial("id").primaryKey(),
+  url: text("url").notNull(),
+  status: text("status").notNull().default("pending"), // pending, processing, completed, failed
+  originalityScore: integer("originality_score"),
+  plagiarismRisk: integer("plagiarism_risk"),
+  deepfakeConfidence: integer("deepfake_confidence"),
+  sentiment: text("sentiment"),
+  rawResult: jsonb("raw_result"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertVerificationSchema = createInsertSchema(verifications).pick({
+  url: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export const createVerificationSchema = z.object({
+  url: z.string().url("Please enter a valid URL"),
+});
+
+export type Verification = typeof verifications.$inferSelect;
+export type InsertVerification = z.infer<typeof insertVerificationSchema>;
+export type CreateVerificationRequest = z.infer<typeof createVerificationSchema>;
+export type VerificationResponse = Verification;
+
+// Export chat models for OpenAI integration
+export * from "./models/chat";
