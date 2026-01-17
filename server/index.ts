@@ -1,35 +1,20 @@
 // Load environment variables FIRST before any other imports
 import 'dotenv/config';
 import { config } from 'dotenv';
-import { resolve, join, dirname } from 'path';
+import { resolve, join } from 'path';
 import { existsSync } from 'fs';
-import { fileURLToPath } from 'url';
 
-// Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// In production (CommonJS build), just use process.cwd()
+// In development (ES modules), we don't need this complex path resolution
+const envPath = resolve(process.cwd(), '.env.local');
 
-// Try multiple possible locations for .env.local
-const possiblePaths = [
-  resolve(process.cwd(), '.env.local'),
-  join(__dirname, '..', '.env.local'),
-  resolve(__dirname, '..', '.env.local'),
-];
-
-let loaded = false;
-for (const envPath of possiblePaths) {
-  if (existsSync(envPath)) {
-    const result = config({ path: envPath, override: true });
-    if (!result.error) {
-      console.log('✓ Loaded environment from:', envPath);
-      loaded = true;
-      break;
-    }
+if (existsSync(envPath)) {
+  const result = config({ path: envPath, override: true });
+  if (!result.error) {
+    console.log('✓ Loaded environment from:', envPath);
   }
-}
-
-if (!loaded) {
-  console.warn('⚠️  No .env.local file found, using system environment variables');
+} else {
+  console.log('ℹ No .env.local file found, using system environment variables');
 }
 
 console.log('Environment check:');
