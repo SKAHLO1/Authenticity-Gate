@@ -15,6 +15,12 @@ const envSchema = z.object({
   GENLAYER_RPC_URL: z.string().default('https://studio.genlayer.com:8000'),
   GENLAYER_PRIVATE_KEY: z.string().optional(),
   
+  // AI Fallback (optional - used if GenLayer contract not configured)
+  GEMINI_API_KEY: z.string().optional(),
+  
+  // Queue System (optional - uses in-memory if not provided)
+  REDIS_URL: z.string().optional(),
+  
   // Security (uses defaults if not provided)
   SESSION_SECRET: z.string().default('dev-secret-change-in-production-min-32-characters-long'),
   RATE_LIMIT_WINDOW_MS: z.string().transform(Number).pipe(z.number().positive()).default('900000'),

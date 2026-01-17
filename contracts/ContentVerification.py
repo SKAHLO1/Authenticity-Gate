@@ -1,6 +1,20 @@
 # { "Depends": "py-genlayer:test" }
 from genlayer import *
 
+@allow_storage
+class VerificationResult:
+    id: u256
+    url: str
+    originality: u64
+    plagiarism: u64
+    deepfake: u64
+    sentiment: str
+    summary: str
+    reasoning: str
+    timestamp: u256
+    validator: str
+    status: str
+
 class ContentVerification(gl.Contract):
     """
     Intelligent Contract for Content Authenticity Verification
@@ -12,14 +26,11 @@ class ContentVerification(gl.Contract):
     """
     
     # State variables
-    verifications: dict[int, dict]
-    next_id: int
-    owner: str
+    verifications: TreeMap[u256, VerificationResult]
+    next_id: u256
     
     def __init__(self):
-        self.verifications = {}
         self.next_id = 1
-        self.owner = gl.tx_sender
     
     @gl.public.write
     def verify_content(self, url: str) -> dict:
@@ -92,23 +103,37 @@ IMPORTANT: Respond with ONLY a valid JSON object, no markdown formatting, no cod
         
         # Store verification result on-chain
         verification_id = self.next_id
-        self.verifications[verification_id] = {
-            "id": verification_id,
-            "url": url,
-            "originality": result.get("originality", 75),
-            "plagiarism": result.get("plagiarism", 25),
-            "deepfake": result.get("deepfake", 20),
-            "sentiment": result.get("sentiment", "Neutral"),
-            "summary": result.get("summary", ""),
-            "reasoning": result.get("reasoning", ""),
-            "timestamp": gl.block_timestamp,
-            "validator": gl.tx_sender,
-            "status": "completed"
-        }
         
+        verification = VerificationResult()
+        verification.id = verification_id
+        verification.url = url
+        verification.originality = result.get("originality", 75)
+        verification.plagiarism = result.get("plagiarism", 25)
+        verification.deepfake = result.get("deepfake", 20)
+        verification.sentiment = result.get("sentiment", "Neutral")
+        verification.summary = result.get("summary", "")
+        verification.reasoning = result.get("reasoning", "")
+        verification.timestamp = gl.block_timestamp
+        verification.validator = gl.tx_sender
+        verification.status = "completed"
+        
+        self.verifications[verification_id] = verification
         self.next_id += 1
         
-        return self.verifications[verification_id]
+        # Convert to dict for return
+        return {
+            "id": int(verification.id),
+            "url": verification.url,
+            "originality": int(verification.originality),
+            "plagiarism": int(verification.plagiarism),
+            "deepfake": int(verification.deepfake),
+            "sentiment": verification.sentiment,
+            "summary": verification.summary,
+            "reasoning": verification.reasoning,
+            "timestamp": int(verification.timestamp),
+            "validator": verification.validator,
+            "status": verification.status
+        }
     
     @gl.public.view
     def get_verification(self, verification_id: int) -> dict:
@@ -119,9 +144,25 @@ IMPORTANT: Respond with ONLY a valid JSON object, no markdown formatting, no cod
             verification_id: The ID of the verification
             
         Returns:
-            dict: The verification result or empty dict if not found
+            dict: The verification result or None if not found
         """
-        return self.verifications.get(verification_id, {})
+        verification = self.verifications.get(verification_id, None)
+        if verification is None:
+            return {}
+        
+        return {
+            "id": int(verification.id),
+            "url": verification.url,
+            "originality": int(verification.originality),
+            "plagiarism": int(verification.plagiarism),
+            "deepfake": int(verification.deepfake),
+            "sentiment": verification.sentiment,
+            "summary": verification.summary,
+            "reasoning": verification.reasoning,
+            "timestamp": int(verification.timestamp),
+            "validator": verification.validator,
+            "status": verification.status
+        }
     
     @gl.public.view
     def get_all_verifications(self) -> list[dict]:
@@ -131,7 +172,23 @@ IMPORTANT: Respond with ONLY a valid JSON object, no markdown formatting, no cod
         Returns:
             list: All verifications sorted by ID
         """
-        return [self.verifications[vid] for vid in sorted(self.verifications.keys())]
+        results = []
+        for vid in sorted(self.verifications.keys()):
+            v = self.verifications[vid]
+            results.append({
+                "id": int(v.id),
+                "url": v.url,
+                "originality": int(v.originality),
+                "plagiarism": int(v.plagiarism),
+                "deepfake": int(v.deepfake),
+                "sentiment": v.sentiment,
+                "summary": v.summary,
+                "reasoning": v.reasoning,
+                "timestamp": int(v.timestamp),
+                "validator": v.validator,
+                "status": v.status
+            })
+        return results
     
     @gl.public.view
     def get_verification_count(self) -> int:

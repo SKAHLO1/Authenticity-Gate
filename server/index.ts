@@ -1,3 +1,42 @@
+// Load environment variables FIRST before any other imports
+import 'dotenv/config';
+import { config } from 'dotenv';
+import { resolve, join, dirname } from 'path';
+import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Try multiple possible locations for .env.local
+const possiblePaths = [
+  resolve(process.cwd(), '.env.local'),
+  join(__dirname, '..', '.env.local'),
+  resolve(__dirname, '..', '.env.local'),
+];
+
+let loaded = false;
+for (const envPath of possiblePaths) {
+  if (existsSync(envPath)) {
+    const result = config({ path: envPath, override: true });
+    if (!result.error) {
+      console.log('✓ Loaded environment from:', envPath);
+      loaded = true;
+      break;
+    }
+  }
+}
+
+if (!loaded) {
+  console.warn('⚠️  No .env.local file found, using system environment variables');
+}
+
+console.log('Environment check:');
+console.log('  GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '✓ Set' : '✗ Missing');
+console.log('  GENLAYER_CONTRACT_ADDRESS:', process.env.GENLAYER_CONTRACT_ADDRESS ? '✓ Set' : '✗ Missing');
+console.log('  FIREBASE_PROJECT_ID:', process.env.FIREBASE_PROJECT_ID ? '✓ Set' : '✗ Missing');
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -107,16 +146,9 @@ export function log(message: string, source = "express") {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      logger.info({ port, env: env.NODE_ENV }, 'Server started successfully');
-    },
-  );
+  httpServer.listen(port, "0.0.0.0", () => {
+    logger.info({ port, env: env.NODE_ENV }, 'Server started successfully');
+  });
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {

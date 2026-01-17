@@ -25,9 +25,17 @@ export class GenLayerService {
   private useDirectGemini: boolean = true; // Toggle for development mode
 
   constructor() {
+    console.log('🔧 GenLayerService initializing...');
+    console.log('   GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? `${process.env.GEMINI_API_KEY.substring(0, 10)}...` : 'NOT SET');
+    console.log('   GENLAYER_CONTRACT_ADDRESS:', process.env.GENLAYER_CONTRACT_ADDRESS || 'NOT SET');
+    console.log('   NODE_ENV:', process.env.NODE_ENV);
+    
     // Initialize Gemini if API key is available
     if (process.env.GEMINI_API_KEY) {
       this.gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      console.log('✓ Gemini initialized successfully');
+    } else {
+      console.warn('⚠️  GEMINI_API_KEY not found in environment');
     }
     
     // Get contract address from environment
@@ -35,6 +43,9 @@ export class GenLayerService {
     
     // Use direct Gemini if no contract address or in development
     this.useDirectGemini = !this.contractAddress || process.env.NODE_ENV === 'development';
+    
+    console.log('🔧 GenLayerService mode:', this.useDirectGemini ? 'direct-gemini' : 'genlayer-contract');
+    console.log('🔧 GenLayerService ready:', this.isReady());
   }
 
   /**
@@ -58,7 +69,7 @@ export class GenLayerService {
     }
 
     try {
-      const model = this.gemini.getGenerativeModel({ model: "gemini-pro" });
+      const model = this.gemini.getGenerativeModel({ model: "gemini-2.5-flash" });
 
       const prompt = `Analyze the following content for authenticity and quality.
 
@@ -168,5 +179,19 @@ Return ONLY valid JSON, no markdown formatting.`;
   }
 }
 
-// Singleton instance
-export const genLayerService = new GenLayerService();
+// Lazy singleton instance - only created when first accessed
+let _instance: GenLayerService | null = null;
+
+export const genLayerService = {
+  get instance(): GenLayerService {
+    if (!_instance) {
+      _instance = new GenLayerService();
+    }
+    return _instance;
+  },
+  // Proxy methods for backward compatibility
+  verifyContent: (content: string) => genLayerService.instance.verifyContent(content),
+  batchVerify: (contents: string[]) => genLayerService.instance.batchVerify(contents),
+  isReady: () => genLayerService.instance.isReady(),
+  getStatus: () => genLayerService.instance.getStatus(),
+};

@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { ShieldCheck, Github, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { UserProfile } from "@/components/UserProfile";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -39,6 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Github className="h-4 w-4" />
                 GitHub
               </Button>
+              <UserProfile />
             </div>
 
             {/* Mobile Menu Button */}

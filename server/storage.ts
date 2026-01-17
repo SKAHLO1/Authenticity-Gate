@@ -1,40 +1,131 @@
-import { db } from "./db";
-import {
-  verifications,
-  type CreateVerificationRequest,
-  type VerificationResponse
-} from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { db, collections, docToVerification, type Verification, Timestamp } from './firebase';
+import { logger } from './services/logger';
 
-export interface IStorage {
-  getVerifications(): Promise<VerificationResponse[]>;
-  getVerification(id: number): Promise<VerificationResponse | undefined>;
-  createVerification(verification: CreateVerificationRequest): Promise<VerificationResponse>;
-  updateVerification(id: number, updates: Partial<VerificationResponse>): Promise<VerificationResponse>;
+export interface CreateVerificationInput {
+  url: string;
+  userId?: string;
+  status?: string;
+  rawResult?: any;
 }
 
-export class DatabaseStorage implements IStorage {
-  async getVerifications(): Promise<VerificationResponse[]> {
-    return await db.select().from(verifications).orderBy(verifications.createdAt);
+export interface UpdateVerificationInput {
+  status?: string;
+  originalityScore?: number;
+  plagiarismRisk?: number;
+  deepfakeConfidence?: number;
+  sentiment?: string;
+  rawResult?: any;
+}
+
+export class FirebaseStorage {
+  async getVerifications(): Promise<Verification[]> {
+    try {
+      const snapshot = await db.collection(collections.verifications)
+        .orderBy('createdAt', 'desc')
+        .limit(100)
+        .get();
+      
+      return snapshot.docs
+        .map(doc => docToVerification(doc))
+        .filter((v): v is Verification => v !== null);
+    } catch (error) {
+      logger.error({ error }, 'Error getting verifications');
+      return [];
+    }
   }
 
-  async getVerification(id: number): Promise<VerificationResponse | undefined> {
-    const [verification] = await db.select().from(verifications).where(eq(verifications.id, id));
-    return verification;
+  async getVerification(id: string): Promise<Verification | null> {
+    try {
+      const doc = await db.collection(collections.verifications).doc(id).get();
+      return docToVerification(doc);
+    } catch (error) {
+      logger.error({ error, id }, 'Error getting verification');
+      return null;
+    }
   }
 
-  async createVerification(verification: CreateVerificationRequest): Promise<VerificationResponse> {
-    const [created] = await db.insert(verifications).values(verification).returning();
-    return created;
+  async createVerification(input: CreateVerificationInput): Promise<Verification> {
+    try {
+      const now = Timestamp.now();
+      const docRef = db.collection(collections.verifications).doc();
+      
+      const verification: Omit<Verification, 'id'> = {
+        url: input.url,
+        userId: input.userId,
+        status: (input.status as any) || 'pending',
+        createdAt: now.toDate(),
+        updatedAt: now.toDate(),
+      };
+      
+      await docRef.set({
+        ...verification,
+        createdAt: now,
+        updatedAt: now,
+      });
+      
+      logger.info({ id: docRef.id, url: input.url, userId: input.userId }, 'Verification created');
+      
+      return {
+        id: docRef.id,
+        ...verification,
+      };
+    } catch (error) {
+      logger.error({ error, input }, 'Error creating verification');
+      throw error;
+    }
   }
 
-  async updateVerification(id: number, updates: Partial<VerificationResponse>): Promise<VerificationResponse> {
-    const [updated] = await db.update(verifications)
-      .set(updates)
-      .where(eq(verifications.id, id))
-      .returning();
-    return updated;
+  async getUserVerifications(userId: string): Promise<Verification[]> {
+    try {
+      const snapshot = await db.collection(collections.verifications)
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .limit(100)
+        .get();
+      
+      return snapshot.docs
+        .map(doc => docToVerification(doc))
+        .filter((v): v is Verification => v !== null);
+    } catch (error) {
+      logger.error({ error, userId }, 'Error getting user verifications');
+      return [];
+    }
+  }
+
+  async updateVerification(id: string, updates: UpdateVerificationInput): Promise<Verification> {
+    try {
+      const docRef = db.collection(collections.verifications).doc(id);
+      
+      await docRef.update({
+        ...updates,
+        updatedAt: Timestamp.now(),
+      });
+      
+      const updated = await docRef.get();
+      const verification = docToVerification(updated);
+      
+      if (!verification) {
+        throw new Error('Verification not found after update');
+      }
+      
+      logger.info({ id, updates }, 'Verification updated');
+      
+      return verification;
+    } catch (error) {
+      logger.error({ error, id, updates }, 'Error updating verification');
+      throw error;
+    }
+  }
+
+  async deleteVerification(id: string): Promise<void> {
+    try {
+      await db.collection(collections.verifications).doc(id).delete();
+      logger.info({ id }, 'Verification deleted');
+    } catch (error) {
+      logger.error({ error, id }, 'Error deleting verification');
+      throw error;
+    }
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new FirebaseStorage();

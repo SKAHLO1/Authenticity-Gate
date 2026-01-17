@@ -21,8 +21,55 @@ import { motion } from "framer-motion";
 
 export default function VerificationDetails() {
   const [, params] = useRoute("/verification/:id");
-  const id = parseInt(params?.id || "0");
+  const id = params?.id || "";
   const { data, isLoading, error } = useVerification(id);
+
+  const handleDownloadCertificate = () => {
+    if (!data) return;
+
+    // Create certificate content
+    const certificateContent = `
+AUTHENTICITY GATE VERIFICATION CERTIFICATE
+==========================================
+
+Verification ID: ${data.id}
+URL: ${data.url}
+Status: ${data.status.toUpperCase()}
+Timestamp: ${data.createdAt ? new Date(data.createdAt).toLocaleString() : 'N/A'}
+
+ANALYSIS RESULTS
+----------------
+Originality Score: ${data.originalityScore || 'N/A'}/100
+Plagiarism Risk: ${data.plagiarismRisk || 'N/A'}/100
+Deepfake Confidence: ${data.deepfakeConfidence || 'N/A'}/100
+Sentiment: ${data.sentiment || 'N/A'}
+
+SUMMARY
+-------
+${data.rawResult?.summary || 'No summary available'}
+
+REASONING
+---------
+${data.rawResult?.reasoning || 'No reasoning available'}
+
+==========================================
+Verified by Authenticity Gate
+Powered by GenLayer AI Consensus
+Certificate ID: ${data.id}
+Generated: ${new Date().toLocaleString()}
+    `.trim();
+
+    // Create blob and download
+    const blob = new Blob([certificateContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `authenticity-certificate-${data.id}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
 
   if (isLoading) {
     return (
@@ -239,7 +286,12 @@ export default function VerificationDetails() {
                   </div>
                   
                   <div className="pt-4 border-t border-primary/10">
-                    <Button className="w-full" variant="outline">
+                    <Button 
+                      className="w-full" 
+                      variant="outline"
+                      onClick={handleDownloadCertificate}
+                      disabled={!isCompleted}
+                    >
                       Download Certificate
                     </Button>
                   </div>
