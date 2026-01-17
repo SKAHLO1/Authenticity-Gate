@@ -53,7 +53,7 @@ app.use(helmet({
         "https://*.firebaseio.com",
         "https://*.googleapis.com",
       ],
-      frameSrc: ["'self'", "https://accounts.google.com"],
+      frameSrc: ["'self'", "https://accounts.google.com", "https://authentication-gate.firebaseapp.com"],
     },
   } : false,
 }));
