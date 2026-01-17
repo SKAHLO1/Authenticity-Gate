@@ -39,7 +39,23 @@ const httpServer = createServer(app);
 
 // Security middleware
 app.use(helmet({
-  contentSecurityPolicy: isProduction ? undefined : false, // Disable CSP in development for Vite
+  contentSecurityPolicy: isProduction ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://apis.google.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: [
+        "'self'",
+        "https://identitytoolkit.googleapis.com",
+        "https://securetoken.googleapis.com",
+        "https://*.firebaseio.com",
+        "https://*.googleapis.com",
+      ],
+      frameSrc: ["'self'", "https://accounts.google.com"],
+    },
+  } : false,
 }));
 
 // CORS
