@@ -13,28 +13,42 @@ export { getAuth };
 // Initialize Firebase Admin
 let serviceAccount: ServiceAccount;
 
-// Try to load from JSON file first (more reliable than env var)
-const serviceAccountPath = join(process.cwd(), 'authentication-gate-firebase-adminsdk-fbsvc-9b11cdccbe.json');
-
-if (existsSync(serviceAccountPath)) {
+// Try environment variables first (for production deployments)
+if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
   try {
-    const fileContent = readFileSync(serviceAccountPath, 'utf8');
-    serviceAccount = JSON.parse(fileContent);
-    console.log('✓ Loaded Firebase credentials from file');
+    // Replace literal \n with actual newlines
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+    
+    serviceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: privateKey,
+    };
+    console.log('✓ Loaded Firebase credentials from environment variables');
   } catch (error) {
-    console.error('Failed to load Firebase credentials from file:', error);
-    throw new Error('Invalid Firebase service account file');
+    console.error('Failed to parse Firebase credentials from environment:', error);
+    throw new Error('Invalid Firebase environment variables');
   }
-} else {
-  console.warn('⚠️  Firebase service account file not found - authentication will not work');
-  console.warn('Expected file:', serviceAccountPath);
+}
+// Try to load from JSON file (for local development)
+else {
+  const serviceAccountPath = join(process.cwd(), 'authentication-gate-firebase-adminsdk-fbsvc-9b11cdccbe.json');
   
-  // Fallback to demo credentials
-  serviceAccount = {
-    projectId: 'demo-project',
-    clientEmail: 'demo@demo.iam.gserviceaccount.com',
-    privateKey: '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj\nMzEfYyjiWA4R4/M2bS1+fWIcPm15nQRBW7wyLuo+VFT0DNV5Ocfu2lLGKr5FS96z\n-----END PRIVATE KEY-----\n',
-  };
+  if (existsSync(serviceAccountPath)) {
+    try {
+      const fileContent = readFileSync(serviceAccountPath, 'utf8');
+      serviceAccount = JSON.parse(fileContent);
+      console.log('✓ Loaded Firebase credentials from file');
+    } catch (error) {
+      console.error('Failed to load Firebase credentials from file:', error);
+      throw new Error('Invalid Firebase service account file');
+    }
+  } else {
+    console.error('❌ No Firebase credentials found!');
+    console.error('Please set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY environment variables');
+    console.error('Or place the service account JSON file at:', serviceAccountPath);
+    throw new Error('Firebase credentials not configured');
+  }
 }
 
 const app = initializeApp({
