@@ -68,24 +68,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   useEffect(() => {
-    // Check for redirect result first
+    let unsubscribe: (() => void) | undefined;
+
+    // Check for redirect result first, then set up auth state listener
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
           console.log('Redirect sign-in successful:', result.user.email);
+          // User is set, now set up the listener
+          setCurrentUser(result.user);
         }
       })
       .catch((error) => {
         console.error('Redirect sign-in error:', error.code, error.message);
+      })
+      .finally(() => {
+        // Set up auth state listener after checking redirect result
+        unsubscribe = onAuthStateChanged(auth, (user) => {
+          console.log('Auth state changed:', user ? `User: ${user.email}` : 'No user');
+          setCurrentUser(user);
+          setLoading(false);
+        });
       });
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('Auth state changed:', user ? `User: ${user.email}` : 'No user');
-      setCurrentUser(user);
-      setLoading(false);
-    });
-
-    return unsubscribe;
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const value: AuthContextType = {
