@@ -39,6 +39,7 @@ const httpServer = createServer(app);
 
 // Security middleware
 app.use(helmet({
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
   contentSecurityPolicy: isProduction ? {
     directives: {
       defaultSrc: ["'self'"],
@@ -117,7 +118,7 @@ export function log(message: string, source = "express") {
       },
     }, 'Unhandled error');
 
-    res.status(status).json({ 
+    res.status(status).json({
       message: isProduction ? 'Internal Server Error' : message,
       ...(isProduction ? {} : { stack: err.stack }),
     });
@@ -125,7 +126,7 @@ export function log(message: string, source = "express") {
 
   // Health check endpoint
   app.get('/health', (_req, res) => {
-    res.json({ 
+    res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
@@ -154,10 +155,10 @@ export function log(message: string, source = "express") {
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'Shutdown signal received');
-    
+
     httpServer.close(async () => {
       logger.info('HTTP server closed');
-      
+
       try {
         await closeQueue();
         logger.info('Graceful shutdown complete');
