@@ -6,8 +6,7 @@ import {
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -55,8 +54,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
     try {
-      console.log('Starting Google sign-in with redirect...');
-      await signInWithRedirect(auth, provider);
+      console.log('Starting Google sign-in with popup...');
+      const result = await signInWithPopup(auth, provider);
+      console.log('Google sign-in successful:', result.user.email);
     } catch (error: any) {
       console.error('Google sign-in error:', error.code, error.message);
       throw error;
@@ -68,45 +68,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-
     console.log('AuthContext: Initializing auth...');
     
-    // Check for redirect result first, then set up auth state listener
-    getRedirectResult(auth)
-      .then((result) => {
-        console.log('Redirect result:', result ? 'User found' : 'No redirect result');
-        if (result) {
-          console.log('Redirect sign-in successful:', result.user.email);
-          console.log('User UID:', result.user.uid);
-          // User is set, now set up the listener
-          setCurrentUser(result.user);
-        } else {
-          console.log('No redirect result - checking current auth state');
-        }
-      })
-      .catch((error) => {
-        console.error('Redirect sign-in error:', error.code, error.message);
-      })
-      .finally(() => {
-        // Set up auth state listener after checking redirect result
-        console.log('Setting up auth state listener...');
-        unsubscribe = onAuthStateChanged(auth, (user) => {
-          console.log('Auth state changed:', user ? `User: ${user.email}` : 'No user');
-          if (user) {
-            console.log('User UID:', user.uid);
-            console.log('User persistence:', auth.currentUser ? 'Session active' : 'No session');
-          }
-          setCurrentUser(user);
-          setLoading(false);
-        });
-      });
+    // Set up auth state listener
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('Auth state changed:', user ? `User: ${user.email}` : 'No user');
+      setCurrentUser(user);
+      setLoading(false);
+    });
 
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
+    return unsubscribe;
   }, []);
 
   const value: AuthContextType = {
