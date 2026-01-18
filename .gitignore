@@ -9,6 +9,7 @@ vite.config.ts.*
 .env.local
 .env
 .env.example
+.env.example
 .env.example.local
 
 
