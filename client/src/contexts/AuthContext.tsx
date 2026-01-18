@@ -53,14 +53,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
-    try {
-      console.log('Starting Google sign-in with popup...');
-      const result = await signInWithPopup(auth, provider);
-      console.log('Google sign-in successful:', result.user.email);
-    } catch (error: any) {
-      console.error('Google sign-in error:', error.code, error.message);
-      throw error;
-    }
+    console.log('Starting Google sign-in with popup...');
+    const result = await signInWithPopup(auth, provider);
+    console.log('Google sign-in successful:', result.user.email);
   }
 
   async function resetPassword(email: string) {
@@ -69,7 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     console.log('AuthContext: Initializing auth...');
-    
+
     // Set up auth state listener
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log('Auth state changed:', user ? `User: ${user.email}` : 'No user');
@@ -92,7 +87,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

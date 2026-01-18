@@ -21,7 +21,7 @@ export function SignupForm({ onToggleMode }: SignupFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
+
     if (!email || !password || !confirmPassword) {
       toast({
         title: 'Error',
@@ -71,16 +71,17 @@ export function SignupForm({ onToggleMode }: SignupFormProps) {
     try {
       setLoading(true);
       await loginWithGoogle();
-      toast({
-        title: 'Success',
-        description: 'Signed up with Google successfully',
-      });
+      // Don't show success toast here - let the redirect happen naturally
     } catch (error: any) {
-      toast({
-        title: 'Signup Failed',
-        description: error.message || 'Failed to sign up with Google',
-        variant: 'destructive',
-      });
+      console.error('Google signup error:', error);
+      // Only show error if it's an actual error (not popup closed)
+      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+        toast({
+          title: 'Signup Failed',
+          description: error.message || 'Failed to sign up with Google',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }

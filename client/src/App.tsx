@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import VerificationDetails from "@/pages/VerificationDetails";
 import Auth from "@/pages/Auth";
+import Profile from "@/pages/Profile";
 
 function Router() {
   return (
@@ -17,6 +18,11 @@ function Router() {
       <Route path="/">
         <ProtectedRoute>
           <Home />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/profile">
+        <ProtectedRoute>
+          <Profile />
         </ProtectedRoute>
       </Route>
       <Route path="/verification/:id">

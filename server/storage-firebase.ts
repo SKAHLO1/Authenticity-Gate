@@ -4,7 +4,9 @@ import { logger } from './services/logger';
 
 export interface CreateVerificationInput {
   url: string;
+  userId?: string;
   status?: string;
+  rawResult?: any;
 }
 
 export interface UpdateVerificationInput {
@@ -28,12 +30,32 @@ export class FirebaseStorage {
         .orderBy('createdAt', 'desc')
         .limit(100)
         .get();
-      
+
       return snapshot.docs
         .map(doc => docToVerification(doc))
         .filter((v): v is Verification => v !== null);
     } catch (error) {
       logger.error({ error }, 'Error getting verifications');
+      return [];
+    }
+  }
+
+  /**
+   * Get verifications for a specific user, sorted by creation date
+   */
+  async getUserVerifications(userId: string): Promise<Verification[]> {
+    try {
+      const snapshot = await db.collection(collections.verifications)
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .limit(100)
+        .get();
+
+      return snapshot.docs
+        .map(doc => docToVerification(doc))
+        .filter((v): v is Verification => v !== null);
+    } catch (error) {
+      logger.error({ error, userId }, 'Error getting user verifications');
       return [];
     }
   }
@@ -58,21 +80,31 @@ export class FirebaseStorage {
     try {
       const now = Timestamp.now();
       const docRef = db.collection(collections.verifications).doc();
-      
-      const verification: Omit<Verification, 'id'> = {
+
+      const verification: any = {
         url: input.url,
         status: (input.status as any) || 'pending',
         createdAt: now,
         updatedAt: now,
       };
-      
+
+      // Add optional fields
+      if (input.userId) {
+        verification.userId = input.userId;
+      }
+      if (input.rawResult) {
+        verification.rawResult = input.rawResult;
+      }
+
       await docRef.set(verification);
-      
-      logger.info({ id: docRef.id, url: input.url }, 'Verification created');
-      
+
+      logger.info({ id: docRef.id, url: input.url, userId: input.userId }, 'Verification created');
+
       return {
         id: docRef.id,
         ...verification,
+        createdAt: verification.createdAt.toDate(),
+        updatedAt: verification.updatedAt.toDate(),
       };
     } catch (error) {
       logger.error({ error, input }, 'Error creating verification');
@@ -86,21 +118,21 @@ export class FirebaseStorage {
   async updateVerification(id: string, updates: UpdateVerificationInput): Promise<Verification> {
     try {
       const docRef = db.collection(collections.verifications).doc(id);
-      
+
       await docRef.update({
         ...updates,
         updatedAt: Timestamp.now(),
       });
-      
+
       const updated = await docRef.get();
       const verification = docToVerification(updated);
-      
+
       if (!verification) {
         throw new Error('Verification not found after update');
       }
-      
+
       logger.info({ id, updates }, 'Verification updated');
-      
+
       return verification;
     } catch (error) {
       logger.error({ error, id, updates }, 'Error updating verification');
