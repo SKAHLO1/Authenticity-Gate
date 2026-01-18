@@ -1,11 +1,12 @@
-import { Link } from "wouter";
-import { ShieldCheck, Github, Menu, X } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { ShieldCheck, Github, Menu, X, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { UserProfile } from "@/components/UserProfile";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [location] = useLocation();
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body selection:bg-primary/30">
@@ -30,12 +31,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-6">
-              <a href="https://docs.genlayer.com" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/docs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                 Documentation
-              </a>
-              <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              </Link>
+              <Link href="/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                 How it Works
-              </a>
+              </Link>
               <Button variant="outline" size="sm" className="gap-2 rounded-full border-border/50 hover:bg-accent/50">
                 <Github className="h-4 w-4" />
                 GitHub
@@ -45,7 +46,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden">
-              <button 
+              <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="p-2 text-muted-foreground hover:text-foreground"
               >
@@ -59,18 +60,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-border/50 bg-background">
             <div className="px-4 py-6 space-y-4">
-               <a href="https://docs.genlayer.com" className="block text-sm font-medium text-muted-foreground hover:text-foreground">
+              <Link href="/docs" className="block text-sm font-medium text-muted-foreground hover:text-foreground">
                 Documentation
-              </a>
-              <a href="#" className="block text-sm font-medium text-muted-foreground hover:text-foreground">
+              </Link>
+              <Link href="/how-it-works" className="block text-sm font-medium text-muted-foreground hover:text-foreground">
                 How it Works
-              </a>
+              </Link>
             </div>
           </div>
         )}
       </nav>
 
       <main className="relative">
+        {location !== '/' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <Link href="/">
+              <Button variant="ghost" className="gap-2 pl-0 hover:pl-2 transition-all">
+                <ArrowLeft className="w-4 h-4" />
+                Return
+              </Button>
+            </Link>
+          </div>
+        )}
         {children}
       </main>
 
@@ -83,29 +94,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <span className="font-display font-bold text-lg">AuthenticityVerifier</span>
               </div>
               <p className="text-muted-foreground text-sm max-w-sm mx-auto md:mx-0">
-                Securing the web's content with decentralized AI consensus. 
+                Securing the web's content with decentralized AI consensus.
                 Verify originality, detect deepfakes, and ensure trust.
               </p>
             </div>
             <div>
               <h4 className="font-display font-semibold mb-4 text-foreground">Resources</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">API Reference</a></li>
+                <li><Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link></li>
+                <li><Link href="/api-docs" className="hover:text-primary transition-colors">API Reference</Link></li>
                 <li><a href="#" className="hover:text-primary transition-colors">Status</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-display font-semibold mb-4 text-foreground">Company</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
+                <li><Link href="/about" className="hover:text-primary transition-colors">About</Link></li>
+                <li><Link href="/blog" className="hover:text-primary transition-colors">Blog</Link></li>
+                <li><Link href="/careers" className="hover:text-primary transition-colors">Careers</Link></li>
               </ul>
             </div>
           </div>
           <div className="mt-12 pt-8 border-t border-border/50 text-center text-xs text-muted-foreground">
-            © 2024 Authenticity Verifier. Built with GenLayer.
+            © 2025 Authenticity Verifier. Built with GenLayer.
           </div>
         </div>
       </footer>
