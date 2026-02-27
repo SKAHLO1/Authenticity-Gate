@@ -4,7 +4,7 @@
 
 A simple, production-ready content verification platform using **GenLayer Intelligent Contracts** with **Gemini AI** and **Firebase**. Verify content authenticity, detect plagiarism, identify deepfakes, and perform sentiment analysis with blockchain consensus.
 
-## 🌟 Features
+## 🌟Features
 
 - **GenLayer Intelligent Contract**: Python contract uses Gemini AI via `gl.exec_llm()` for analysis
 - **Blockchain Consensus**: Multiple validators reach agreement on AI analysis results

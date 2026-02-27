@@ -6,8 +6,6 @@ vite.config.ts.*
 *.tar.gz
 
 # Environment files
-.env.local
-.env
 .env.example
 .env.example
 .env.example.local
@@ -76,3 +74,4 @@ SIMPLIFIED_ARCHITECTURE.md
 
 #extract private key
 extract-private-key.js
+config.bat
