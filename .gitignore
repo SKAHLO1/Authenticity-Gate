@@ -29,6 +29,7 @@ coverage
 .nyc_output
 
 # Editor directories and files
+.vscode/*
 !.vscode/extensions.json
 .idea
 *.suo
@@ -73,4 +74,3 @@ SIMPLIFIED_ARCHITECTURE.md
 
 #extract private key
 extract-private-key.js
-config.bat
